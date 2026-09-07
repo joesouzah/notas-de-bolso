@@ -1,0 +1,1940 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f4f2" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111111" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Notas de Bolso</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <style>
+    :root{
+      color-scheme:light dark;
+      --bg:#f4f4f2;
+      --panel:#ffffff;
+      --text:#171717;
+      --muted:#6b6b68;
+      --line:#deded9;
+      --hover:#ecece7;
+      --danger:#a12626;
+      --shadow:0 12px 35px rgba(0,0,0,.12);
+      --app-height:100dvh;
+      --ease:cubic-bezier(.22,1,.36,1);
+      --ease-quick:cubic-bezier(.2,.8,.2,1);
+      --motion:260ms;
+    }
+    @media (prefers-color-scheme:dark){
+      :root{
+        --bg:#111111;
+        --panel:#181818;
+        --text:#f1f1ed;
+        --muted:#9c9c96;
+        --line:#30302d;
+        --hover:#242421;
+        --danger:#ff7777;
+        --shadow:0 16px 40px rgba(0,0,0,.35);
+      }
+    }
+    *{box-sizing:border-box}
+    html{-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;height:100%;overflow:hidden;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+    button,input,textarea{font:inherit}
+    button,input,textarea{-webkit-tap-highlight-color:transparent}
+    button{color:inherit;transition:background-color .16s ease,color .16s ease,border-color .16s ease,opacity .16s ease,transform .12s var(--ease-quick)}
+    button:active:not(:disabled){transform:scale(.97)}
+    button:focus-visible,input:focus-visible,textarea:focus-visible,.note-item:focus-visible{outline:2px solid var(--muted);outline-offset:2px}
+    .app{height:var(--app-height);display:grid;grid-template-columns:320px 1fr;overflow:hidden;isolation:isolate}
+    aside{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+    .side-head{padding:calc(18px + env(safe-area-inset-top)) 16px 12px;display:flex;gap:10px;align-items:center;flex:0 0 auto}
+    .brand{font-size:22px;font-weight:700;letter-spacing:-.03em;flex:1}
+    .icon-btn{border:1px solid var(--line);background:transparent;border-radius:12px;width:42px;height:42px;cursor:pointer;font-size:23px;line-height:1;display:inline-grid;place-items:center;flex:0 0 auto;touch-action:manipulation}
+    .icon-btn:hover,.icon-btn[aria-expanded="true"]{background:var(--hover)}
+    .search-wrap{padding:0 16px 12px;flex:0 0 auto}
+    #search{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--text);padding:11px 12px;border-radius:12px;outline:none;transition:border-color .18s ease,background-color .18s ease,box-shadow .18s ease}
+    #search:focus{border-color:var(--muted);box-shadow:0 0 0 3px color-mix(in srgb,var(--muted) 12%,transparent)}
+    .list{flex:1 1 auto;min-height:0;overflow-y:scroll;overflow-x:hidden;padding:0 8px 14px;overscroll-behavior:contain;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:var(--muted) transparent}
+    .list::-webkit-scrollbar{width:10px}
+    .list::-webkit-scrollbar-track{background:transparent}
+    .list::-webkit-scrollbar-thumb{background:var(--line);border:3px solid var(--panel);border-radius:999px}
+    .list::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+    .note-item{padding:12px;border-radius:12px;cursor:pointer;margin-bottom:4px;border:1px solid transparent;transition:background-color .16s ease,border-color .16s ease,transform .18s var(--ease),opacity .18s ease;touch-action:manipulation}
+    .note-item:hover{background:var(--hover)}
+    .note-item:active{transform:scale(.988)}
+    .note-item.active{background:var(--hover);border-color:var(--line)}
+    .note-title-row{display:flex;align-items:center;gap:7px;min-width:0}
+    .pin-mark{font-size:12px;line-height:1;color:var(--muted);flex:0 0 auto}
+    .note-title{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+    .note-preview{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
+    .empty-list{padding:28px 14px;color:var(--muted);text-align:center;font-size:14px}
+    .list-meta{flex:0 0 auto;border-top:1px solid var(--line);padding:9px 16px calc(10px + env(safe-area-inset-bottom));color:var(--muted);font-size:11px;background:var(--panel)}
+    main{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+    .editor-head{height:calc(64px + env(safe-area-inset-top));flex:0 0 calc(64px + env(safe-area-inset-top));border-bottom:1px solid var(--line);display:flex;align-items:center;padding:env(safe-area-inset-top) 22px 0;gap:6px;background:var(--bg);position:relative;z-index:10;transition:background-color .2s ease,border-color .2s ease}
+    .status{font-size:13px;color:var(--muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .text-btn{border:0;background:transparent;padding:9px 10px;min-height:40px;border-radius:10px;cursor:pointer;color:var(--muted);white-space:nowrap;touch-action:manipulation}
+    .text-btn:hover,.text-btn[aria-expanded="true"]{background:var(--hover);color:var(--text)}
+    .text-btn:disabled{opacity:.48;cursor:wait}
+    .danger{color:var(--danger)!important}
+    .editor{flex:1 1 auto;min-height:0;display:flex;justify-content:center;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+    .paper{width:min(820px,100%);padding:46px 34px 90px;transform-origin:50% 24%}
+    .paper.note-enter{animation:paperIn .24s var(--ease) both}
+    @keyframes paperIn{from{opacity:.35;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    #title{width:100%;border:0;outline:0;background:transparent;color:var(--text);font-size:34px;font-weight:750;letter-spacing:-.04em;margin-bottom:22px;transition:color .18s ease}
+    #body{width:100%;min-height:55vh;resize:none;border:0;outline:0;background:transparent;color:var(--text);font-size:18px;line-height:1.65;overflow-x:hidden;overflow-y:hidden;scrollbar-width:thin}
+    .placeholder{margin:auto;color:var(--muted);text-align:center;padding:24px;max-width:360px}
+    .placeholder strong{display:block;color:var(--text);font-size:22px;margin-bottom:6px}
+    .mobile-back{display:none}
+    .menu-wrap,.note-menu-wrap{position:relative}
+    .menu{position:absolute;top:48px;right:0;width:205px;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);z-index:30;transform-origin:top right;animation:menuIn .16s var(--ease) both}
+    @keyframes menuIn{from{opacity:0;transform:translateY(-5px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .note-menu{top:42px;width:175px}
+    .menu[hidden]{display:none}
+    .menu button{width:100%;border:0;background:transparent;text-align:left;padding:10px 11px;border-radius:9px;cursor:pointer;color:var(--text)}
+    .menu button:hover{background:var(--hover)}
+    .menu .menu-note{padding:7px 11px 4px;color:var(--muted);font-size:11px;line-height:1.35}
+    #importInput{display:none}
+    .toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translate(-50%,18px) scale(.98);background:var(--text);color:var(--bg);padding:8px 10px 8px 14px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .24s var(--ease);z-index:50;white-space:nowrap;max-width:calc(100vw - 32px);display:flex;align-items:center;gap:9px}
+    .toast-message{overflow:hidden;text-overflow:ellipsis}
+    .toast-action{border:0;background:transparent;color:inherit;font-weight:750;padding:7px 9px;min-height:36px;border-radius:999px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+    .toast-action:hover{background:color-mix(in srgb,var(--bg) 12%,transparent)}
+    .toast.show{opacity:1;transform:translate(-50%,0) scale(1);pointer-events:auto}
+
+    .about-dialog{border:0;padding:0;background:transparent;color:var(--text);max-width:min(460px,calc(100vw - 28px));width:100%;}
+    .about-dialog::backdrop{background:rgba(0,0,0,.42);backdrop-filter:blur(2px);}
+    .about-card{background:var(--panel);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:22px;animation:aboutIn .2s var(--ease) both;}
+    @keyframes aboutIn{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .about-head{display:flex;align-items:center;gap:12px;margin-bottom:4px}.about-head h2{font-size:24px;letter-spacing:-.035em;margin:0;flex:1}.about-close{width:40px;height:40px;border:1px solid var(--line);border-radius:12px;background:transparent;cursor:pointer;font-size:22px;line-height:1}.about-close:hover{background:var(--hover)}
+    .about-tagline{margin:0 0 20px;color:var(--muted);font-size:14px}.about-meta{display:grid;grid-template-columns:max-content 1fr;gap:9px 14px;margin:0;font-size:14px}.about-meta dt{color:var(--muted)}.about-meta dd{margin:0;min-width:0}.about-meta a{color:inherit;text-underline-offset:3px;overflow-wrap:anywhere}.about-license{margin:20px 0 0;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);line-height:1.5}.about-license a{color:var(--text);text-underline-offset:3px}.about-version{margin:12px 0 0;color:var(--muted);font-size:11px}
+
+    @media(max-width:700px){
+      .app{display:block;position:relative;perspective:1200px}
+      aside,main{position:absolute;inset:0;height:100%;min-height:0;backface-visibility:hidden}
+      aside{border-right:0;z-index:1;transform:translate3d(0,0,0) scale(1);opacity:1;transition:transform var(--motion) var(--ease),opacity .22s ease}
+      main{z-index:2;background:var(--bg);transform:translate3d(100%,0,0);opacity:.98;pointer-events:none;border-left:1px solid var(--line);box-shadow:-18px 0 46px rgba(0,0,0,.08);transition:transform var(--motion) var(--ease),opacity .2s ease}
+      .app.editing aside{transform:translate3d(-7%,0,0) scale(.986);opacity:.58;pointer-events:none}
+      .app.editing main{transform:translate3d(0,0,0);opacity:1;pointer-events:auto}
+      .mobile-back{display:inline-flex}
+      .paper{padding:30px 20px calc(72px + env(safe-area-inset-bottom))}
+      #title{font-size:29px;margin-bottom:18px}
+      #body{font-size:17px;line-height:1.6}
+      .editor-head{padding:env(safe-area-inset-top) 10px 0;gap:2px}
+      .editor-head .text-btn{padding:9px 8px;min-height:44px}
+      .status{font-size:12px}
+      .note-menu{right:0}
+    }
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+    }
+    @media(max-width:390px){
+      .editor-head{height:calc(58px + env(safe-area-inset-top));flex-basis:calc(58px + env(safe-area-inset-top))}
+      .editor-head .text-btn{font-size:13px;padding:8px 6px;min-height:42px}
+      .status{font-size:11px}
+      .paper{padding-left:18px;padding-right:18px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <aside>
+      <div class="side-head">
+        <div class="brand">Notas de Bolso</div>
+        <div class="menu-wrap">
+          <button class="icon-btn" id="menuBtn" aria-label="Mais opções" title="Mais opções" aria-expanded="false" aria-haspopup="menu" aria-controls="menu">⋯</button>
+          <div class="menu" id="menu" role="menu" hidden>
+            <button id="exportBtn" role="menuitem">Exportar backup</button>
+            <button id="importBtn" role="menuitem">Importar backup</button>
+            <button id="rescueBtn" role="menuitem" hidden>Baixar dados de recuperação</button>
+            <button id="aboutBtn" role="menuitem">Sobre</button>
+            <div class="menu-note">Suas notas continuam só neste aparelho.</div>
+          </div>
+        </div>
+        <button class="icon-btn" id="newBtn" aria-label="Nova nota" title="Nova nota (Ctrl+N)">+</button>
+      </div>
+      <div class="search-wrap"><input id="search" type="search" placeholder="Pesquisar" autocomplete="off" aria-label="Pesquisar notas" /></div>
+      <div class="list" id="list"></div>
+      <div class="list-meta" id="listMeta" aria-live="polite"></div>
+    </aside>
+
+    <main>
+      <div class="editor-head">
+        <button class="text-btn mobile-back" id="backBtn">← Voltar</button>
+        <div class="status" id="status"></div>
+        <button class="text-btn" id="pdfBtn" hidden title="Baixar esta nota em PDF">PDF</button>
+        <button class="text-btn" id="copyBtn" hidden title="Copiar toda a nota">Copiar</button>
+        <div class="note-menu-wrap">
+          <button class="text-btn" id="noteMoreBtn" hidden aria-label="Mais ações da nota" title="Mais ações" aria-expanded="false" aria-haspopup="menu" aria-controls="noteMenu">⋯</button>
+          <div class="menu note-menu" id="noteMenu" role="menu" hidden>
+            <button id="shareBtn" role="menuitem">Enviar</button>
+            <button id="txtBtn" role="menuitem">Baixar TXT</button>
+            <button id="pinBtn" role="menuitem">Fixar</button>
+            <button id="duplicateBtn" role="menuitem">Duplicar</button>
+            <button class="danger" id="deleteBtn" role="menuitem">Apagar</button>
+          </div>
+        </div>
+      </div>
+      <div class="editor" id="editorArea">
+        <div class="placeholder" id="placeholder"><strong>Nenhuma nota ainda</strong>Toque em + para começar.</div>
+        <div class="paper" id="paper" hidden>
+          <input id="title" maxlength="120" placeholder="Título" aria-label="Título da nota" />
+          <textarea id="body" placeholder="Escreva aqui..." aria-label="Conteúdo da nota"></textarea>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <dialog class="about-dialog" id="aboutDialog" aria-labelledby="aboutTitle">
+    <div class="about-card">
+      <div class="about-head">
+        <h2 id="aboutTitle">Notas de Bolso</h2>
+        <button class="about-close" id="aboutCloseBtn" type="button" aria-label="Fechar">×</button>
+      </div>
+      <p class="about-tagline">Abre. Escreve. Fecha.</p>
+      <dl class="about-meta">
+        <dt>Criado por</dt><dd>Joe Souza</dd>
+        <dt>Copyright</dt><dd>© 2026 AstarothX</dd>
+        <dt>Contato</dt><dd><a href="mailto:astarothxdev@gmail.com">astarothxdev@gmail.com</a></dd>
+        <dt>Instagram</dt><dd><a href="https://instagram.com/joesouzah" target="_blank" rel="noopener noreferrer">@joesouzah</a></dd>
+      </dl>
+      <p class="about-license">Software livre e de código aberto — <a href="./LICENSE.txt" target="_blank" rel="noopener noreferrer">MIT License</a>.</p>
+      <p class="about-version">Versão <span id="aboutVersion">1.4</span></p>
+    </div>
+  </dialog>
+
+  <input id="importInput" type="file" accept="application/json,.json" aria-label="Selecionar backup JSON" />
+  <div class="toast" id="toast" role="status" aria-live="polite"><span class="toast-message" id="toastMessage"></span><button class="toast-action" id="toastAction" hidden></button></div>
+
+  <script>
+    // A chave legada é mantida apenas para migrar instalações desde a v0.1.
+    const STORAGE_KEY = 'notas-simples-v1';
+    const SYNC_META_KEY = 'notas-simples-v1-sync';
+    const STATE_KEY = 'notas-simples-v1-state';
+    const RECOVERY_KEY = 'notas-simples-v1-recovery';
+    const RECOVERY_PREFIX = 'notas-simples-v1-recovery-';
+    const RAW_RESCUE_KEY = 'notas-simples-v1-raw-rescue';
+    const RAW_RESCUE_PREFIX = 'notas-simples-v1-raw-rescue-';
+    const APP_VERSION = '1.4';
+    const STATE_VERSION = 1;
+    const BACKUP_VERSION = 9;
+    const MAX_BACKUP_BYTES = 50 * 1024 * 1024;
+    const MAX_AUTOGROW_PX = 50000;
+    const LARGE_NOTE_AUTOGROW_CHARS = 80000;
+    const MAX_FUTURE_CLOCK_SKEW_MS = 7 * 24 * 60 * 60 * 1000;
+    const TOMBSTONE_TTL_MS = 180 * 24 * 60 * 60 * 1000;
+
+    const app = document.getElementById('app');
+    const listEl = document.getElementById('list');
+    const listMetaEl = document.getElementById('listMeta');
+    const searchEl = document.getElementById('search');
+    const newBtn = document.getElementById('newBtn');
+    const backBtn = document.getElementById('backBtn');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const duplicateBtn = document.getElementById('duplicateBtn');
+    const pinBtn = document.getElementById('pinBtn');
+    const pdfBtn = document.getElementById('pdfBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const txtBtn = document.getElementById('txtBtn');
+    const noteMoreBtn = document.getElementById('noteMoreBtn');
+    const noteMenu = document.getElementById('noteMenu');
+    const titleEl = document.getElementById('title');
+    const bodyEl = document.getElementById('body');
+    const statusEl = document.getElementById('status');
+    const paperEl = document.getElementById('paper');
+    const placeholderEl = document.getElementById('placeholder');
+    const menuBtn = document.getElementById('menuBtn');
+    const menuEl = document.getElementById('menu');
+    const exportBtn = document.getElementById('exportBtn');
+    const importBtn = document.getElementById('importBtn');
+    const rescueBtn = document.getElementById('rescueBtn');
+    const aboutBtn = document.getElementById('aboutBtn');
+    const aboutDialog = document.getElementById('aboutDialog');
+    const aboutCloseBtn = document.getElementById('aboutCloseBtn');
+    const aboutVersionEl = document.getElementById('aboutVersion');
+    const importInput = document.getElementById('importInput');
+    const toastEl = document.getElementById('toast');
+    const toastMessageEl = document.getElementById('toastMessage');
+    const toastActionEl = document.getElementById('toastAction');
+    if (aboutVersionEl) aboutVersionEl.textContent = APP_VERSION;
+
+    let recoveredOnLoad = false;
+    let notes = [];
+    let selectedId = null;
+    let saveTimer = null;
+    let savedStatusTimer = null;
+    let toastTimer = null;
+    let deletedSnapshot = null;
+    let storageErrorShown = false;
+    let unreadableStorageRaw = null;
+    let storageWriteLocked = false;
+    let previewRefreshTimer = null;
+    let searchTimer = null;
+    let recoveryTimer = null;
+    let mobileHistoryArmed = false;
+    let resizeFrame = null;
+    let persistenceRequested = false;
+    let updateToastShown = false;
+    let waitingUpdateWorker = null;
+    let recoveryConflictPromoted = false;
+    let externalSyncTimer = null;
+    let updateOfferDisplaced = false;
+    let reofferUpdate = null;
+    let stateTombstones = {};
+    let migratedFromLegacy = false;
+    let atomicStateNeedsRepair = false;
+    let futureStateBlocked = false;
+    const dirtyNoteIds = new Set();
+    const knownNoteSnapshots = new Map();
+    const recoveryKeysReadyToClear = new Set();
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
+    const INSTANCE_ID = makeId();
+    const INSTANCE_RECOVERY_KEY = `${RECOVERY_PREFIX}${INSTANCE_ID}`;
+
+    notes = loadNotes();
+    refreshKnownSnapshots(notes, true);
+    selectedId = sortedNotes(notes)[0]?.id || null;
+
+    function makeId(){
+      return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function safeTimestamp(value, fallback){
+      const number = Number(value);
+      const now = Date.now();
+      // Relógios errados não podem decidir conflitos nem deixar notas presas no futuro por anos.
+      return Number.isFinite(number)
+        && Math.abs(number) <= 8.64e15
+        && number <= now + MAX_FUTURE_CLOCK_SKEW_MS
+        ? number
+        : fallback;
+    }
+
+    function normalizeNote(raw){
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+      const hasIdentityOrContent = ['id','title','body'].some(key => Object.prototype.hasOwnProperty.call(raw,key));
+      if (!hasIdentityOrContent) return null;
+      if (Object.prototype.hasOwnProperty.call(raw,'id') && (typeof raw.id !== 'string' || !raw.id)) return null;
+      if (Object.prototype.hasOwnProperty.call(raw,'title') && typeof raw.title !== 'string') return null;
+      if (Object.prototype.hasOwnProperty.call(raw,'body') && typeof raw.body !== 'string') return null;
+      if (Object.prototype.hasOwnProperty.call(raw,'pinned') && typeof raw.pinned !== 'boolean') return null;
+      const now = Date.now();
+      const created = safeTimestamp(raw.created, now);
+      const updated = Math.max(created, safeTimestamp(raw.updated, created));
+      return {
+        id: typeof raw.id === 'string' && raw.id ? raw.id : makeId(),
+        title: typeof raw.title === 'string' ? raw.title.slice(0,120) : '',
+        body: typeof raw.body === 'string' ? raw.body : '',
+        created,
+        updated,
+        pinned: raw.pinned === true
+      };
+    }
+
+    function sameNoteContent(a,b){
+      return !!a && !!b && a.title === b.title && a.body === b.body && a.created === b.created && a.updated === b.updated && a.pinned === b.pinned;
+    }
+
+    function sameNoteData(a,b){
+      // Para decidir se existe divergência do usuário, timestamps não são conteúdo.
+      return !!a && !!b && a.title === b.title && a.body === b.body && a.pinned === b.pinned;
+    }
+
+    function refreshKnownSnapshots(currentNotes, keepDirty = false){
+      const liveIds = new Set(currentNotes.map(note=>note.id));
+      for (const id of [...knownNoteSnapshots.keys()]){
+        if (!liveIds.has(id) && !(keepDirty && dirtyNoteIds.has(id))) knownNoteSnapshots.delete(id);
+      }
+      for (const note of currentNotes){
+        if (keepDirty && dirtyNoteIds.has(note.id)) continue;
+        knownNoteSnapshots.set(note.id, {...note});
+      }
+    }
+
+    function conflictCopy(note, suffix = 'conflito'){
+      const title = note.title.trim();
+      const now = Date.now();
+      return {
+        ...note,
+        id:makeId(),
+        title:(title ? `${title} — ${suffix}` : `Nota — ${suffix}`).slice(0,120),
+        updated:now
+      };
+    }
+
+    function dedupeNotes(input){
+      const byId = new Map();
+      const conflicts = [];
+      for (const raw of input){
+        const note = normalizeNote(raw);
+        if (!note) continue;
+        const previous = byId.get(note.id);
+        if (!previous){
+          byId.set(note.id, note);
+        } else if (sameNoteData(note, previous)){
+          if (note.updated > previous.updated) byId.set(note.id, note);
+        } else {
+          // IDs iguais com conteúdo diferente nunca são resolvidos só pelo relógio.
+          conflicts.push(conflictCopy(note));
+        }
+      }
+      return [...byId.values(), ...conflicts];
+    }
+
+    function normalizeNotesArray(input){
+      if (!Array.isArray(input)) throw new Error('Formato de notas inválido');
+      const valid = [];
+      let invalidCount = 0;
+      for (const raw of input){
+        const note = normalizeNote(raw);
+        if (note) valid.push(note);
+        else invalidCount++;
+      }
+      return {notes:dedupeNotes(valid), invalidCount};
+    }
+
+    function safeStorageGet(key){
+      try { return localStorage.getItem(key); }
+      catch (error){
+        storageWriteLocked = true;
+        return null;
+      }
+    }
+
+    function simpleHash(text){
+      let hash = 2166136261;
+      const str = String(text || '');
+      for (let i=0;i<str.length;i++){
+        hash ^= str.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      return (hash >>> 0).toString(16);
+    }
+
+    function preserveUnreadableRaw(raw, source = 'dados locais'){
+      if (!raw) return false;
+      if (!unreadableStorageRaw) unreadableStorageRaw = raw;
+      try {
+        const key = `${RAW_RESCUE_PREFIX}${simpleHash(`${source}\n${raw}`)}`;
+        const payload = JSON.stringify({app:'notas-simples-rescue', version:1, source, preservedAt:new Date().toISOString(), raw});
+        if (localStorage.getItem(key) !== payload) localStorage.setItem(key, payload);
+        if (localStorage.getItem(key) === payload){
+          storageWriteLocked = false;
+          return true;
+        }
+      } catch {}
+      storageWriteLocked = true;
+      return false;
+    }
+
+    function normalizeTombstones(raw){
+      const result = {};
+      const now = Date.now();
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return result;
+      for (const [id, value] of Object.entries(raw)){
+        if (!id) continue;
+        const ts = safeTimestamp(value, 0);
+        if (ts > 0 && now - ts <= TOMBSTONE_TTL_MS) result[id] = ts;
+      }
+      return result;
+    }
+
+    function compactTombstones(tombstones, liveNotes = []){
+      const liveIds = new Set(liveNotes.map(note=>note.id));
+      const compacted = normalizeTombstones(tombstones);
+      for (const id of liveIds) delete compacted[id];
+      return compacted;
+    }
+
+    function readLegacyState(){
+      let legacyNotes = [];
+      const raw = safeStorageGet(STORAGE_KEY);
+      if (raw){
+        try {
+          const parsed = JSON.parse(raw);
+          const normalized = normalizeNotesArray(parsed);
+          legacyNotes = normalized.notes;
+          if (normalized.invalidCount) preserveUnreadableRaw(raw, 'armazenamento legado parcialmente inválido');
+        } catch {
+          preserveUnreadableRaw(raw, 'armazenamento legado inválido');
+        }
+      }
+      let tombstones = {};
+      const metaRaw = safeStorageGet(SYNC_META_KEY);
+      if (metaRaw){
+        try {
+          const parsed = JSON.parse(metaRaw);
+          tombstones = normalizeTombstones(parsed?.tombstones);
+        } catch {
+          // A v1.3 não depende destes metadados para impedir ressurreições,
+          // mas preserva o material corrompido para diagnóstico/recuperação.
+          preserveUnreadableRaw(metaRaw, 'metadados legados de exclusão inválidos');
+        }
+      }
+      return {notes:legacyNotes, tombstones};
+    }
+
+    function parseAtomicStateRaw(raw, source = 'estado principal'){
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !Array.isArray(parsed.notes)) throw new Error('Estado local inválido');
+      if (parsed.app && parsed.app !== 'notas-simples') throw new Error('Estado pertence a outro aplicativo');
+      if (Number(parsed.stateVersion) > STATE_VERSION){
+        const error = new Error('Estado criado por uma versão mais nova');
+        error.futureState = true;
+        throw error;
+      }
+      const normalized = normalizeNotesArray(parsed.notes);
+      const tombstoneObject = parsed.tombstones && typeof parsed.tombstones === 'object' && !Array.isArray(parsed.tombstones) ? parsed.tombstones : {};
+      const normalizedTombstones = normalizeTombstones(tombstoneObject);
+      const tombstoneInvalid = Object.keys(tombstoneObject).some(id => !Object.prototype.hasOwnProperty.call(normalizedTombstones,id));
+      if (normalized.invalidCount || tombstoneInvalid) preserveUnreadableRaw(raw, `${source} parcialmente inválido`);
+      return {notes:normalized.notes, tombstones:compactTombstones(normalizedTombstones, normalized.notes)};
+    }
+
+    function readStoredStateForMerge(){
+      const raw = localStorage.getItem(STATE_KEY);
+      if (raw){
+        try { return parseAtomicStateRaw(raw); }
+        catch (error){
+          preserveUnreadableRaw(raw, 'estado principal inválido');
+          throw error;
+        }
+      }
+      return readLegacyState();
+    }
+
+    function recoveryStorageKeys(){
+      const keys = [];
+      try {
+        for (let i=0;i<localStorage.length;i++){
+          const key = localStorage.key(i);
+          if (key === RECOVERY_KEY || key?.startsWith(RECOVERY_PREFIX)) keys.push(key);
+        }
+      } catch {}
+      return [...new Set(keys)];
+    }
+
+    function parseRecoveryRaw(raw){
+      const parsed = JSON.parse(raw);
+      const candidate = parsed && typeof parsed === 'object' && !Array.isArray(parsed) && parsed.note ? parsed.note : parsed;
+      return normalizeNote(candidate);
+    }
+
+    function readRecoveries(){
+      const recoveries = [];
+      for (const key of recoveryStorageKeys()){
+        const raw = safeStorageGet(key);
+        if (!raw) continue;
+        try {
+          const note = parseRecoveryRaw(raw);
+          if (!note) throw new Error('Recovery inválido');
+          recoveries.push({key, note});
+        } catch {
+          preserveUnreadableRaw(raw, `recovery corrompido (${key})`);
+        }
+      }
+      return recoveries;
+    }
+
+    function mergeRecoveryIntoLoaded(loaded, recovery, key){
+      const index = loaded.findIndex(n=>n.id===recovery.id);
+      if (index === -1){
+        // Um recovery órfão pode pertencer a uma nota apagada em outra instância.
+        // Preserva o texto, mas nunca ressuscita silenciosamente o ID antigo.
+        const copy = conflictCopy(recovery, 'recuperada');
+        loaded.push(copy);
+        dirtyNoteIds.add(copy.id);
+        recoveryConflictPromoted = true;
+        recoveredOnLoad = true;
+      } else if (sameNoteData(recovery, loaded[index])){
+        if (recovery.updated > loaded[index].updated){
+          loaded[index] = recovery;
+          dirtyNoteIds.add(recovery.id);
+          recoveredOnLoad = true;
+        } else {
+          // O estado persistido já contém a mesma edição ou uma versão mais nova.
+          try { localStorage.removeItem(key); } catch {}
+          return;
+        }
+      } else if (recovery.updated > loaded[index].updated){
+        const previous = conflictCopy(loaded[index], 'versão anterior');
+        loaded[index] = recovery;
+        loaded.push(previous);
+        dirtyNoteIds.add(recovery.id);
+        dirtyNoteIds.add(previous.id);
+        recoveryConflictPromoted = true;
+        recoveredOnLoad = true;
+      } else {
+        const copy = conflictCopy(recovery, 'recuperada');
+        loaded.push(copy);
+        dirtyNoteIds.add(copy.id);
+        recoveryConflictPromoted = true;
+        recoveredOnLoad = true;
+      }
+      recoveryKeysReadyToClear.add(key);
+    }
+
+    function loadNotes(){
+      let state = null;
+      const atomicRaw = safeStorageGet(STATE_KEY);
+      if (atomicRaw){
+        try { state = parseAtomicStateRaw(atomicRaw); }
+        catch (error) {
+          preserveUnreadableRaw(atomicRaw, error?.futureState ? 'estado criado por versão futura' : 'estado principal inválido na inicialização');
+          if (error?.futureState) futureStateBlocked = true;
+          else atomicStateNeedsRepair = true;
+        }
+      }
+      if (!state){
+        state = readLegacyState();
+        migratedFromLegacy = true;
+      }
+      stateTombstones = compactTombstones(state.tombstones, state.notes);
+      const loaded = [...state.notes];
+      for (const recovery of readRecoveries()) mergeRecoveryIntoLoaded(loaded, recovery.note, recovery.key);
+      return dedupeNotes(loaded);
+    }
+
+    function mergeConcurrentNotes(localNotes, storedNotes, tombstones, dirtyIds = new Set(), preserveDirtyConflicts = true, baselines = knownNoteSnapshots){
+      const localById = new Map(localNotes.map(note=>[note.id, note]));
+      const storedById = new Map(storedNotes.map(note=>[note.id, note]));
+      const ids = new Set([...localById.keys(), ...storedById.keys(), ...Object.keys(tombstones || {})]);
+      const merged = [];
+      const replacements = new Map();
+      for (const id of ids){
+        const local = localById.get(id);
+        const storedOriginal = storedById.get(id);
+        const explicitlyDeleted = !!tombstones?.[id];
+        const stored = explicitlyDeleted ? null : storedOriginal;
+        const locallyDirty = dirtyIds.has(id);
+        const baseline = baselines.get(id);
+        let chosen = null;
+
+        if (local && stored){
+          if (locallyDirty){
+            chosen = local;
+            const externalChanged = !baseline || !sameNoteData(stored, baseline);
+            if (preserveDirtyConflicts && externalChanged && !sameNoteData(local, stored)) merged.push(conflictCopy(stored, 'conflito externo'));
+          } else {
+            // Para uma nota que esta aba não editou, o estado persistido é a autoridade.
+            // O relógio nunca decide quem ganha.
+            chosen = stored;
+          }
+        } else if (stored){
+          chosen = stored;
+        } else if (local){
+          if (locallyDirty){
+            if (baseline || explicitlyDeleted){
+              // A nota existia quando esta aba abriu e sumiu do estado persistido: foi apagada fora daqui.
+              if (preserveDirtyConflicts){
+                const copy = conflictCopy(local, 'recuperada');
+                merged.push(copy);
+                replacements.set(id, copy.id);
+              } else {
+                // Durante sincronização visual, mantém a edição viva até o próximo salvamento seguro.
+                chosen = local;
+              }
+            } else {
+              // Nota nova criada nesta instância e ainda não persistida.
+              chosen = local;
+            }
+          }
+          // Nota local não modificada e ausente do armazenamento = exclusão externa. Não ressuscita.
+        }
+
+        if (chosen) merged.push(chosen);
+      }
+      const result = dedupeNotes(merged);
+      result.replacements = replacements;
+      return result;
+    }
+
+    function writeRecoveryNow(note){
+      if (!note || storageWriteLocked) return false;
+      try {
+        const serialized = JSON.stringify({version:1, appVersion:APP_VERSION, instanceId:INSTANCE_ID, savedAt:Date.now(), note});
+        localStorage.setItem(INSTANCE_RECOVERY_KEY, serialized);
+        if (localStorage.getItem(INSTANCE_RECOVERY_KEY) !== serialized) throw new Error('Falha de verificação');
+        return true;
+      } catch (error){
+        showStorageError(error);
+        return false;
+      }
+    }
+
+    function scheduleRecovery(note){
+      clearTimeout(recoveryTimer);
+      recoveryTimer = setTimeout(()=>{
+        recoveryTimer = null;
+        writeRecoveryNow(note);
+      }, 90);
+    }
+
+    function clearRecoveryIfSaved(){
+      try { localStorage.removeItem(INSTANCE_RECOVERY_KEY); } catch {}
+      for (const key of [...recoveryKeysReadyToClear]){
+        try {
+          localStorage.removeItem(key);
+          recoveryKeysReadyToClear.delete(key);
+        } catch {}
+      }
+      // Recovery único das versões anteriores também é limpo depois que o estado reconciliado foi salvo.
+      try { localStorage.removeItem(RECOVERY_KEY); } catch {}
+    }
+
+    function showStorageError(error){
+      statusEl.textContent = 'Não foi possível salvar';
+      if (!storageErrorShown){
+        storageErrorShown = true;
+        const quota = error?.name === 'QuotaExceededError';
+        showToast(quota
+          ? 'O armazenamento deste navegador está cheio. Exporte um backup antes de continuar.'
+          : 'O navegador bloqueou o armazenamento. Suas alterações continuam abertas nesta tela.');
+      }
+    }
+
+    async function requestPersistentStorage(){
+      if (persistenceRequested || !navigator.storage?.persist) return;
+      persistenceRequested = true;
+      try {
+        if (typeof navigator.storage.persisted === 'function' && await navigator.storage.persisted()) return;
+        await navigator.storage.persist();
+      } catch {}
+    }
+
+    function cleanupLegacyStorage(){
+      // Depois que STATE_KEY foi confirmado, as chaves antigas só duplicariam o consumo de localStorage.
+      // Se uma aba v1.2 ainda aberta gravá-las novamente, a ponte de sincronização abaixo absorve a mudança.
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      try { localStorage.removeItem(SYNC_META_KEY); } catch {}
+    }
+
+    function persist(options = {}){
+      if (futureStateBlocked){
+        showStorageError(new Error('Estado criado por versão futura'));
+        return false;
+      }
+      if (storageWriteLocked){
+        showStorageError(new Error('Armazenamento protegido'));
+        return false;
+      }
+      const deletedIds = Array.isArray(options.deletedIds) ? options.deletedIds : [];
+      const restoredIds = Array.isArray(options.restoredIds) ? options.restoredIds : [];
+      let previousRaw = null;
+      try {
+        previousRaw = localStorage.getItem(STATE_KEY);
+        // Depois de preservar um estado ilegível, a cópia em memória vira a base de reparo.
+        const storedState = atomicStateNeedsRepair
+          ? {notes:notes.map(note=>({...note})), tombstones:{...stateTombstones}}
+          : readStoredStateForMerge();
+        const nextTombstones = {...storedState.tombstones, ...stateTombstones};
+        const now = Date.now();
+        for (const id of deletedIds) if (id) nextTombstones[id] = now;
+        for (const id of restoredIds) if (id) delete nextTombstones[id];
+
+        const reconciled = mergeConcurrentNotes(notes, storedState.notes, nextTombstones, dirtyNoteIds, true);
+        const replacementSelectedId = selectedId ? reconciled.replacements?.get(selectedId) : null;
+        const compacted = compactTombstones(nextTombstones, reconciled);
+        const envelope = {app:'notas-simples', appVersion:APP_VERSION, stateVersion:STATE_VERSION, notes:reconciled, tombstones:compacted};
+        const serialized = JSON.stringify(envelope);
+
+        // Uma única chave: notas e exclusões passam a ser atomicamente consistentes.
+        localStorage.setItem(STATE_KEY, serialized);
+        if (localStorage.getItem(STATE_KEY) !== serialized) throw new Error('Falha ao verificar gravação');
+
+        notes = reconciled;
+        if (replacementSelectedId) selectedId = replacementSelectedId;
+        stateTombstones = compacted;
+        dirtyNoteIds.clear();
+        refreshKnownSnapshots(notes);
+        clearRecoveryIfSaved();
+        storageErrorShown = false;
+        migratedFromLegacy = false;
+        atomicStateNeedsRepair = false;
+        cleanupLegacyStorage();
+        return true;
+      } catch (error){
+        // setItem de uma única chave é atômico; este rollback cobre falhas de verificação/mocks de navegador.
+        try {
+          if (previousRaw === null) localStorage.removeItem(STATE_KEY);
+          else localStorage.setItem(STATE_KEY, previousRaw);
+        } catch {}
+        showStorageError(error);
+        return false;
+      }
+    }
+
+    function syncEditorIntoMemory(){
+      const note = notes.find(n=>n.id===selectedId);
+      if (!note || paperEl.hidden) return note;
+      if (note.title !== titleEl.value || note.body !== bodyEl.value){
+        note.title = titleEl.value;
+        note.body = bodyEl.value;
+        note.updated = Date.now();
+        dirtyNoteIds.add(note.id);
+      }
+      return note;
+    }
+
+    function flushSave(){
+      if (saveTimer){ clearTimeout(saveTimer); saveTimer = null; }
+      if (recoveryTimer){ clearTimeout(recoveryTimer); recoveryTimer = null; }
+      const note = syncEditorIntoMemory();
+      if (!note) return true;
+      if (persist()){
+        const current = notes.find(n=>n.id===selectedId) || notes.find(n=>n.id===note.id) || note;
+        setSavedStatus(current, false);
+        return true;
+      }
+      writeRecoveryNow(note);
+      return false;
+    }
+
+    const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {dateStyle:'short', timeStyle:'short'});
+    function nowLabel(ts){
+      try { return dateTimeFormatter.format(safeTimestamp(ts, Date.now())); }
+      catch { return dateTimeFormatter.format(Date.now()); }
+    }
+
+    function noteName(note){
+      const typed = note.title.trim();
+      if (typed) return typed;
+      const first = note.body.trim().split(/\n/)[0]?.slice(0,60);
+      return first || 'Sem título';
+    }
+
+    function sortedNotes(input){
+      return [...input].sort((a,b)=>Number(b.pinned)-Number(a.pinned) || b.updated-a.updated);
+    }
+
+    function setSavedStatus(note, transient){
+      clearTimeout(savedStatusTimer);
+      if (transient){
+        statusEl.textContent = 'Salvo';
+        savedStatusTimer = setTimeout(()=>{
+          if (selectedId === note.id && !saveTimer) statusEl.textContent = `Editado • ${nowLabel(note.updated)}`;
+        }, 1200);
+      } else {
+        statusEl.textContent = `Editado • ${nowLabel(note.updated)}`;
+      }
+    }
+
+    function renderList(){
+      const previousScroll = listEl.scrollTop;
+      const q = searchEl.value.trim().toLocaleLowerCase('pt-BR');
+      const visible = sortedNotes(notes).filter(n => {
+        if (!q) return true;
+        return n.title.toLocaleLowerCase('pt-BR').includes(q) || n.body.toLocaleLowerCase('pt-BR').includes(q);
+      });
+
+      listMetaEl.textContent = q
+        ? `${visible.length} de ${notes.length} ${notes.length === 1 ? 'nota' : 'notas'}`
+        : `${notes.length} ${notes.length === 1 ? 'nota' : 'notas'}`;
+      listEl.replaceChildren();
+
+      if (!visible.length){
+        const div = document.createElement('div');
+        div.className = 'empty-list';
+        div.textContent = q ? 'Nenhuma nota encontrada.' : 'Suas notas aparecem aqui.';
+        listEl.appendChild(div);
+        listEl.scrollTop = previousScroll;
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      for (const note of visible){
+        const item = document.createElement('div');
+        item.className = 'note-item' + (note.id === selectedId ? ' active' : '');
+        item.dataset.noteId = note.id;
+        if (note.id === selectedId) item.setAttribute('aria-current','true');
+        item.tabIndex = 0;
+        item.setAttribute('role','button');
+        item.setAttribute('aria-label',`Abrir nota ${noteName(note)}`);
+
+        const titleRow = document.createElement('div');
+        titleRow.className = 'note-title-row';
+        if (note.pinned){
+          const pin = document.createElement('span');
+          pin.className = 'pin-mark';
+          pin.textContent = '●';
+          pin.title = 'Nota fixada';
+          titleRow.appendChild(pin);
+        }
+
+        const title = document.createElement('div');
+        title.className = 'note-title';
+        title.textContent = noteName(note);
+        titleRow.appendChild(title);
+
+        const preview = document.createElement('div');
+        preview.className = 'note-preview';
+        preview.textContent = note.body.slice(0,240).trim().replace(/\s+/g,' ') || nowLabel(note.updated);
+        item.append(titleRow, preview);
+        item.onclick = () => selectNote(note.id);
+        item.onkeydown = event => {
+          if (event.key === 'Enter' || event.key === ' '){
+            event.preventDefault();
+            selectNote(note.id);
+          }
+        };
+        fragment.appendChild(item);
+      }
+      listEl.appendChild(fragment);
+      listEl.scrollTop = Math.min(previousScroll, Math.max(0, listEl.scrollHeight - listEl.clientHeight));
+    }
+
+    function refreshActiveListItem(){
+      const note = notes.find(n=>n.id===selectedId);
+      if (!note) return;
+      const item = [...listEl.querySelectorAll('.note-item')].find(el=>el.dataset.noteId===note.id);
+      if (!item) return;
+      const title = item.querySelector('.note-title');
+      const preview = item.querySelector('.note-preview');
+      if (title) title.textContent = noteName(note);
+      if (preview) preview.textContent = note.body.slice(0,240).trim().replace(/\s+/g,' ') || nowLabel(note.updated);
+      item.setAttribute('aria-label',`Abrir nota ${noteName(note)}`);
+    }
+
+    function schedulePreviewRefresh(){
+      clearTimeout(previewRefreshTimer);
+      previewRefreshTimer = setTimeout(()=>{
+        previewRefreshTimer = null;
+        // Se há uma busca ativa, a edição pode fazer a nota entrar ou sair do filtro.
+        // Reavaliamos a lista para que resultados nunca fiquem visualmente desatualizados.
+        if (searchEl.value.trim()) renderList();
+        else refreshActiveListItem();
+      }, 90);
+    }
+
+    function scheduleSearch(){
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(()=>{
+        searchTimer = null;
+        renderList();
+      }, 70);
+    }
+
+    function renderEditor(){
+      const note = notes.find(n=>n.id===selectedId);
+      if (!note){
+        paperEl.hidden = true;
+        placeholderEl.hidden = false;
+        placeholderEl.innerHTML = notes.length
+          ? '<strong>Nenhuma nota aberta</strong>Escolha uma nota na lista.'
+          : '<strong>Nenhuma nota ainda</strong>Toque em + para começar.';
+        statusEl.textContent = '';
+        pdfBtn.hidden = true;
+        copyBtn.hidden = true;
+        noteMoreBtn.hidden = true;
+        toggleNoteMenu(false);
+        return;
+      }
+
+      placeholderEl.hidden = true;
+      paperEl.hidden = false;
+      pdfBtn.hidden = false;
+      copyBtn.hidden = false;
+      noteMoreBtn.hidden = false;
+      pinBtn.textContent = note.pinned ? 'Desafixar' : 'Fixar';
+      titleEl.value = note.title;
+      bodyEl.value = note.body;
+      autoGrow();
+      setSavedStatus(note, false);
+    }
+
+    function animatePaperEntrance(){
+      if (paperEl.hidden || reducedMotion) return;
+      paperEl.classList.remove('note-enter');
+      // Reinicia a microtransição somente ao trocar/abrir uma nota, nunca durante a digitação.
+      void paperEl.offsetWidth;
+      paperEl.classList.add('note-enter');
+    }
+
+    function armMobileHistory(){
+      if (window.innerWidth > 700 || !app.classList.contains('editing') || mobileHistoryArmed) return;
+      try {
+        history.pushState({...((history.state && typeof history.state === 'object') ? history.state : {}), notasEditor:true}, '');
+        mobileHistoryArmed = true;
+      } catch {}
+    }
+
+    function enterEditor(){
+      app.classList.add('editing');
+      armMobileHistory();
+    }
+
+    function closeEditorView(){
+      if (!flushSave()){
+        showToast('Não foi possível salvar. A nota continuará aberta para você copiar ou exportar.');
+        return false;
+      }
+      toggleNoteMenu(false);
+      if (document.activeElement === titleEl || document.activeElement === bodyEl) document.activeElement.blur();
+      app.classList.remove('editing');
+      renderList();
+      return true;
+    }
+
+    function leaveEditor(){
+      if (!closeEditorView()) return false;
+      if (mobileHistoryArmed && history.state?.notasEditor){
+        mobileHistoryArmed = false;
+        try { history.back(); } catch {}
+      } else {
+        mobileHistoryArmed = false;
+      }
+      return true;
+    }
+
+    function selectNote(id){
+      if (!notes.some(note=>note.id===id)) return;
+      if (!flushSave()) return;
+      selectedId = id;
+      renderList();
+      renderEditor();
+      animatePaperEntrance();
+      enterEditor();
+      toggleNoteMenu(false);
+      if (window.innerWidth > 700) setTimeout(()=>titleEl.focus(), 50);
+    }
+
+    function createNote(){
+      requestPersistentStorage();
+      if (!flushSave()) return;
+      const now = Date.now();
+      const note = {id:makeId(), title:'', body:'', created:now, updated:now, pinned:false};
+      notes.unshift(note);
+      selectedId = note.id;
+      dirtyNoteIds.add(note.id);
+      const saved = persist();
+      if (!saved) writeRecoveryNow(note);
+      searchEl.value = '';
+      renderList();
+      renderEditor();
+      if (!saved) showStorageError(new Error('A nova nota ainda não foi gravada no armazenamento.'));
+      animatePaperEntrance();
+      enterEditor();
+      setTimeout(()=>titleEl.focus(), 50);
+    }
+
+    function scheduleSave(){
+      requestPersistentStorage();
+      const note = notes.find(n=>n.id===selectedId);
+      if (!note) return;
+      note.title = titleEl.value;
+      note.body = bodyEl.value;
+      note.updated = Date.now();
+      dirtyNoteIds.add(note.id);
+      scheduleRecovery(note);
+      statusEl.textContent = 'Salvando…';
+      schedulePreviewRefresh();
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(()=>{
+        saveTimer = null;
+        if (persist()) setSavedStatus(note, true);
+      }, 240);
+    }
+
+    function togglePin(){
+      if (!flushSave()) return;
+      const note = notes.find(n=>n.id===selectedId);
+      if (!note) return;
+      const before = {...note};
+      note.pinned = !note.pinned;
+      note.updated = Date.now();
+      dirtyNoteIds.add(note.id);
+      if (!persist()){
+        Object.assign(note, before);
+        dirtyNoteIds.delete(note.id);
+        renderEditor();
+        showStorageError(new Error('A alteração não foi gravada no armazenamento.'));
+        toggleNoteMenu(false);
+        return;
+      }
+      renderList();
+      renderEditor();
+      toggleNoteMenu(false);
+      showToast(note.pinned ? 'Nota fixada no topo.' : 'Nota desafixada.');
+    }
+
+    function duplicateNote(){
+      if (!flushSave()) return;
+      const source = notes.find(n=>n.id===selectedId);
+      if (!source) return;
+      const now = Date.now();
+      const copy = {
+        id:makeId(),
+        title:source.title.trim() ? `${source.title.trim()} — cópia`.slice(0,120) : '',
+        body:source.body,
+        created:now,
+        updated:now,
+        pinned:false
+      };
+      const previousSelected = selectedId;
+      notes.unshift(copy);
+      selectedId = copy.id;
+      dirtyNoteIds.add(copy.id);
+      if (!persist()){
+        notes = notes.filter(n=>n.id!==copy.id);
+        dirtyNoteIds.delete(copy.id);
+        selectedId = previousSelected;
+        renderList();
+        renderEditor();
+        showStorageError(new Error('A cópia não foi gravada no armazenamento.'));
+        toggleNoteMenu(false);
+        return;
+      }
+      renderList();
+      renderEditor();
+      animatePaperEntrance();
+      toggleNoteMenu(false);
+      enterEditor();
+      showToast('Nota duplicada.');
+      setTimeout(()=>titleEl.focus(), 50);
+    }
+
+    function deleteNote(){
+      if (!flushSave()) return;
+      const note = notes.find(n=>n.id===selectedId);
+      if (!note) return;
+      toggleNoteMenu(false);
+      if (!confirm(`Apagar “${noteName(note)}”?`)) return;
+      const previousNotes = notes;
+      const previousSelected = selectedId;
+      deletedSnapshot = {...note};
+      notes = notes.filter(n=>n.id!==selectedId);
+      selectedId = sortedNotes(notes)[0]?.id || null;
+      if (!persist({deletedIds:[note.id]})){
+        notes = previousNotes;
+        selectedId = previousSelected;
+        deletedSnapshot = null;
+        renderList();
+        renderEditor();
+        showStorageError(new Error('A exclusão não foi gravada no armazenamento.'));
+        return;
+      }
+      renderList();
+      renderEditor();
+      app.classList.remove('editing');
+      if (mobileHistoryArmed && history.state?.notasEditor){
+        mobileHistoryArmed = false;
+        try { history.back(); } catch {}
+      } else {
+        mobileHistoryArmed = false;
+      }
+      showToast('Nota apagada.', 'Desfazer', restoreDeletedNote);
+    }
+
+    function restoreDeletedNote(){
+      if (!deletedSnapshot) return;
+      const restored = deletedSnapshot;
+      deletedSnapshot = null;
+      const before = notes;
+      const beforeSelected = selectedId;
+      if (!notes.some(n=>n.id===restored.id)) notes = [...notes, restored];
+      selectedId = restored.id;
+      dirtyNoteIds.add(restored.id);
+      if (!persist({restoredIds:[restored.id]})){
+        notes = before;
+        dirtyNoteIds.delete(restored.id);
+        selectedId = beforeSelected;
+        deletedSnapshot = restored;
+        renderList();
+        renderEditor();
+        showStorageError(new Error('A restauração não foi gravada no armazenamento.'));
+        return;
+      }
+      renderList();
+      renderEditor();
+      animatePaperEntrance();
+      enterEditor();
+      showToast('Nota restaurada.');
+    }
+
+    function autoGrow(){
+      if (paperEl.hidden) return;
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      // Medir scrollHeight de centenas de milhares de caracteres força um layout muito caro.
+      // Em notas extremas, usamos uma área de edição estável com rolagem própria.
+      let manyLines = false;
+      if (bodyEl.value.length > 12000){
+        let breaks = 0;
+        for (let i = 0; i < bodyEl.value.length && breaks <= 1800; i++) if (bodyEl.value.charCodeAt(i) === 10) breaks++;
+        manyLines = breaks > 1800;
+      }
+      if (bodyEl.value.length > LARGE_NOTE_AUTOGROW_CHARS || manyLines){
+        const compactHeight = Math.max(240, Math.min(900, viewportHeight * .72));
+        bodyEl.style.height = `${Math.round(compactHeight)}px`;
+        bodyEl.style.overflowY = 'auto';
+        return;
+      }
+      bodyEl.style.height = 'auto';
+      const wanted = Math.max(bodyEl.scrollHeight, viewportHeight * .55);
+      const height = Math.min(wanted, MAX_AUTOGROW_PX);
+      bodyEl.style.height = `${Math.round(height)}px`;
+      bodyEl.style.overflowY = wanted > MAX_AUTOGROW_PX ? 'auto' : 'hidden';
+    }
+
+    function syncAppHeight(){
+      const height = window.visualViewport?.height || window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', `${Math.max(160, Math.round(height))}px`);
+    }
+
+    function scheduleViewportSync(){
+      if (resizeFrame) cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(()=>{
+        resizeFrame = null;
+        syncAppHeight();
+        autoGrow();
+        // Se a janela cruzou do layout desktop para o mobile com uma nota aberta,
+        // prepara o histórico para o botão Voltar continuar retornando à lista.
+        armMobileHistory();
+      });
+    }
+
+    function showToast(message, actionLabel = '', action = null, options = {}){
+      if (actionLabel !== 'Atualizar' && waitingUpdateWorker && updateToastShown){
+        updateToastShown = false;
+        updateOfferDisplaced = true;
+      }
+      toastMessageEl.textContent = message;
+      toastActionEl.hidden = !actionLabel || typeof action !== 'function';
+      toastActionEl.textContent = actionLabel;
+      toastActionEl.onclick = action ? () => {
+        clearTimeout(toastTimer);
+        toastEl.classList.remove('show');
+        action();
+      } : null;
+      toastEl.classList.add('show');
+      clearTimeout(toastTimer);
+      if (options.persistent) return;
+      toastTimer = setTimeout(()=>{
+        toastEl.classList.remove('show');
+        toastActionEl.hidden = true;
+        toastActionEl.onclick = null;
+        if (actionLabel === 'Desfazer') deletedSnapshot = null;
+        if (updateOfferDisplaced && waitingUpdateWorker){
+          updateOfferDisplaced = false;
+          setTimeout(()=>reofferUpdate?.(), 120);
+        }
+      }, actionLabel ? 5000 : 2200);
+    }
+
+    function focusFirstMenuItem(menu){
+      requestAnimationFrame(()=>menu.querySelector('button:not([hidden]):not(:disabled)')?.focus());
+    }
+
+    function toggleMenu(force){
+      const open = typeof force === 'boolean' ? force : menuEl.hidden;
+      menuEl.hidden = !open;
+      menuBtn.setAttribute('aria-expanded', String(open));
+      if (open){
+        toggleNoteMenu(false);
+        focusFirstMenuItem(menuEl);
+      }
+    }
+
+    function toggleNoteMenu(force){
+      const open = typeof force === 'boolean' ? force : noteMenu.hidden;
+      noteMenu.hidden = !open;
+      noteMoreBtn.setAttribute('aria-expanded', String(open));
+      if (open){
+        toggleMenu(false);
+        focusFirstMenuItem(noteMenu);
+      }
+    }
+
+    function handleMenuKeys(event, menu, trigger, close){
+      const items = [...menu.querySelectorAll('button:not([hidden]):not(:disabled)')];
+      if (!items.length) return;
+      const current = items.indexOf(document.activeElement);
+      let next = current;
+      if (event.key === 'ArrowDown') next = current < 0 ? 0 : (current + 1) % items.length;
+      else if (event.key === 'ArrowUp') next = current < 0 ? items.length - 1 : (current - 1 + items.length) % items.length;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = items.length - 1;
+      else if (event.key === 'Escape'){
+        event.preventDefault();
+        close(false);
+        trigger.focus();
+        return;
+      } else return;
+      event.preventDefault();
+      items[next].focus();
+    }
+
+    function cleanFileName(name){
+      const cleaned = name
+        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 80);
+      return cleaned || 'nota';
+    }
+
+    function downloadBlob(blob, filename){
+      if (!blob || !filename || typeof URL?.createObjectURL !== 'function') throw new Error('Download indisponível');
+      const url = URL.createObjectURL(blob);
+      try {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url), 4000);
+        return true;
+      } catch (error){
+        URL.revokeObjectURL(url);
+        throw error;
+      }
+    }
+
+    function currentNoteText(note){
+      const title = note.title.trim();
+      const body = note.body;
+      if (title && body.trim()) return `${title}\n\n${body}`;
+      return body || title || 'Sem título';
+    }
+
+    function downloadNoteTxt(){
+      flushSave();
+      const note = notes.find(n=>n.id===selectedId);
+      if (!note) return;
+      try {
+        const blob = new Blob(['\ufeff', currentNoteText(note)], {type:'text/plain;charset=utf-8'});
+        downloadBlob(blob, `${cleanFileName(noteName(note))}.txt`);
+        toggleNoteMenu(false);
+        showToast('TXT baixado.');
+      } catch (error){
+        console.error(error);
+        alert('Não consegui baixar o TXT neste navegador. Você ainda pode usar “Copiar”.');
+      }
+    }
+
+    function estimateTextWidth(text, size){
+      let units = 0;
+      for (const char of Array.from(text)){
+        if (char === ' ') units += .28;
+        else if (/[.,:;!'`|ilI\[\](){}]/.test(char)) units += .30;
+        else if (/[MW@%&]/.test(char)) units += .88;
+        else if (/[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ]/.test(char)) units += .64;
+        else if (/[0-9]/.test(char)) units += .56;
+        else units += .53;
+      }
+      return units * size;
+    }
+
+    function wrapPdfText(text, size, maxWidth){
+      const output = [];
+      const paragraphs = String(text || '').replace(/\r\n?/g, '\n').split('\n');
+      for (const paragraph of paragraphs){
+        if (paragraph === ''){
+          output.push('');
+          continue;
+        }
+        const words = paragraph.replace(/\t/g, '    ').split(/\s+/);
+        let line = '';
+        for (const word of words){
+          const candidate = line ? `${line} ${word}` : word;
+          if (estimateTextWidth(candidate, size) <= maxWidth){
+            line = candidate;
+            continue;
+          }
+          if (line){ output.push(line); line = ''; }
+          if (estimateTextWidth(word, size) <= maxWidth){
+            line = word;
+            continue;
+          }
+          let chunk = '';
+          for (const char of Array.from(word)){
+            const next = chunk + char;
+            if (chunk && estimateTextWidth(next, size) > maxWidth){
+              output.push(chunk);
+              chunk = char;
+            } else {
+              chunk = next;
+            }
+          }
+          line = chunk;
+        }
+        output.push(line);
+      }
+      return output;
+    }
+
+    const CP1252 = new Map([
+      [0x20AC,0x80],[0x201A,0x82],[0x0192,0x83],[0x201E,0x84],[0x2026,0x85],[0x2020,0x86],[0x2021,0x87],
+      [0x02C6,0x88],[0x2030,0x89],[0x0160,0x8A],[0x2039,0x8B],[0x0152,0x8C],[0x017D,0x8E],[0x2018,0x91],
+      [0x2019,0x92],[0x201C,0x93],[0x201D,0x94],[0x2022,0x95],[0x2013,0x96],[0x2014,0x97],[0x02DC,0x98],
+      [0x2122,0x99],[0x0161,0x9A],[0x203A,0x9B],[0x0153,0x9C],[0x017E,0x9E],[0x0178,0x9F]
+    ]);
+
+    function winAnsiByte(char){
+      const code = char.codePointAt(0);
+      if (code >= 0x20 && code <= 0x7E) return code;
+      if (code >= 0xA0 && code <= 0xFF) return code;
+      return CP1252.get(code) ?? 0x3F;
+    }
+
+    function asciiBytes(text){
+      const bytes = new Uint8Array(text.length);
+      for (let i=0;i<text.length;i++) bytes[i] = text.charCodeAt(i) & 0x7F;
+      return bytes;
+    }
+
+    function pdfLiteralBytes(text){
+      const bytes = [0x28];
+      for (const char of Array.from(String(text))){
+        const byte = winAnsiByte(char);
+        if (byte === 0x28 || byte === 0x29 || byte === 0x5C) bytes.push(0x5C);
+        bytes.push(byte);
+      }
+      bytes.push(0x29);
+      return new Uint8Array(bytes);
+    }
+
+    function joinBytes(parts){
+      const size = parts.reduce((sum, part)=>sum + part.length, 0);
+      const result = new Uint8Array(size);
+      let offset = 0;
+      for (const part of parts){
+        result.set(part, offset);
+        offset += part.length;
+      }
+      return result;
+    }
+
+    function textCommand(font, size, x, y, text){
+      return joinBytes([
+        asciiBytes(`BT\n/${font} ${size} Tf\n1 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)} Tm\n`),
+        pdfLiteralBytes(text),
+        asciiBytes(' Tj\nET\n')
+      ]);
+    }
+
+    function buildSelectablePdf(note){
+      const pageWidth = 595.28;
+      const pageHeight = 841.89;
+      const margin = 54;
+      const topY = 775;
+      const bottomY = 52;
+      const contentWidth = pageWidth - margin * 2 - 8;
+      const titleSize = 20;
+      const bodySize = 11;
+      const metaSize = 9;
+      const footerSize = 8;
+      const titleLine = 25;
+      const bodyLine = 16;
+      const titleText = note.title.trim() || 'Sem título';
+      const titleLines = wrapPdfText(titleText, titleSize, contentWidth);
+      const bodyLines = wrapPdfText(note.body, bodySize, contentWidth);
+      const firstBodyStart = topY - Math.max(1,titleLines.length) * titleLine - 48;
+      const firstCapacity = Math.max(1, Math.floor((firstBodyStart - bottomY) / bodyLine));
+      const otherCapacity = Math.max(1, Math.floor((topY - bottomY) / bodyLine));
+      const pages = [];
+      let cursor = 0;
+      pages.push(bodyLines.slice(cursor, cursor + firstCapacity));
+      cursor += firstCapacity;
+      while (cursor < bodyLines.length){
+        pages.push(bodyLines.slice(cursor, cursor + otherCapacity));
+        cursor += otherCapacity;
+      }
+      if (!pages.length) pages.push([]);
+
+      const pageStreams = pages.map((lines, pageIndex)=>{
+        const commands = [];
+        let y = topY;
+        if (pageIndex === 0){
+          for (const line of titleLines){
+            commands.push(textCommand('F2', titleSize, margin, y, line));
+            y -= titleLine;
+          }
+          y -= 4;
+          commands.push(textCommand('F1', metaSize, margin, y, `Última edição: ${nowLabel(note.updated)}`));
+          y -= 24;
+        }
+        for (const line of lines){
+          if (line) commands.push(textCommand('F1', bodySize, margin, y, line));
+          y -= bodyLine;
+        }
+        commands.push(textCommand('F1', footerSize, pageWidth - margin - 34, 28, `${pageIndex + 1} / ${pages.length}`));
+        return joinBytes(commands);
+      });
+
+      const objectCount = 4 + pages.length * 2;
+      const offsets = new Array(objectCount + 1).fill(0);
+      const parts = [];
+      let position = 0;
+      function push(bytes){ parts.push(bytes); position += bytes.length; }
+      function pushText(text){ push(asciiBytes(text)); }
+      function startObject(number){ offsets[number] = position; pushText(`${number} 0 obj\n`); }
+      function endObject(){ pushText('endobj\n'); }
+
+      push(new Uint8Array([37,80,68,70,45,49,46,52,10,37,226,227,207,211,10]));
+      startObject(1); pushText('<< /Type /Catalog /Pages 2 0 R >>\n'); endObject();
+      const pageRefs = pages.map((_,i)=>`${5 + i*2} 0 R`).join(' ');
+      startObject(2); pushText(`<< /Type /Pages /Count ${pages.length} /Kids [${pageRefs}] >>\n`); endObject();
+      startObject(3); pushText('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\n'); endObject();
+      startObject(4); pushText('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>\n'); endObject();
+
+      pageStreams.forEach((stream,index)=>{
+        const pageObject = 5 + index*2;
+        const contentObject = pageObject + 1;
+        startObject(pageObject);
+        pushText(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentObject} 0 R >>\n`);
+        endObject();
+        startObject(contentObject);
+        pushText(`<< /Length ${stream.length} >>\nstream\n`);
+        push(stream);
+        pushText('endstream\n');
+        endObject();
+      });
+
+      const xrefOffset = position;
+      pushText(`xref\n0 ${objectCount + 1}\n`);
+      pushText('0000000000 65535 f \n');
+      for (let i=1;i<=objectCount;i++) pushText(`${String(offsets[i]).padStart(10,'0')} 00000 n \n`);
+      pushText(`trailer\n<< /Size ${objectCount + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`);
+      return {bytes:joinBytes(parts), pages:pages.length};
+    }
+
+    async function downloadNotePdf(){
+      const savedBeforePdf = flushSave();
+      const note = notes.find(n=>n.id===selectedId);
+      if (!note) return;
+      pdfBtn.disabled = true;
+      statusEl.textContent = 'Gerando PDF…';
+      try {
+        const pdf = buildSelectablePdf(note);
+        downloadBlob(new Blob([pdf.bytes], {type:'application/pdf'}), `${cleanFileName(noteName(note))}.pdf`);
+        if (savedBeforePdf) setSavedStatus(note, false);
+        else statusEl.textContent = 'Não foi possível salvar';
+        showToast(`PDF baixado • ${pdf.pages} ${pdf.pages === 1 ? 'página' : 'páginas'}`);
+      } catch (error){
+        console.error(error);
+        if (savedBeforePdf) setSavedStatus(note, false);
+        else statusEl.textContent = 'Não foi possível salvar';
+        alert('Não consegui gerar o PDF desta nota neste navegador.');
+      } finally {
+        pdfBtn.disabled = false;
+      }
+    }
+
+    async function copyNoteText(text){
+      try {
+        if (navigator.clipboard?.writeText){
+          await navigator.clipboard.writeText(text);
+        } else {
+          const area = document.createElement('textarea');
+          area.value = text;
+          area.style.position = 'fixed';
+          area.style.opacity = '0';
+          document.body.appendChild(area);
+          try {
+            area.select();
+            if (!document.execCommand('copy')) throw new Error('Falha ao copiar');
+          } finally {
+            area.remove();
+          }
+        }
+        showToast('Nota copiada.');
+      } catch {
+        alert('Não consegui copiar esta nota. O navegador pode ter bloqueado a área de transferência.');
+      }
+    }
+
+    async function copyCurrentNote(){
+      flushSave();
+      const note = notes.find(n=>n.id===selectedId);
+      if (!note) return;
+      await copyNoteText(currentNoteText(note));
+    }
+
+    async function shareNote(){
+      flushSave();
+      const note = notes.find(n=>n.id===selectedId);
+      if (!note) return;
+      const title = note.title.trim() || noteName(note);
+      const text = note.title.trim() && note.body.trim() ? `${note.title.trim()}\n\n${note.body}` : (note.body || title);
+      if (navigator.share){
+        try {
+          await navigator.share({title, text});
+          return;
+        } catch (error){
+          if (error?.name === 'AbortError') return;
+        }
+      }
+      await copyNoteText(text);
+    }
+
+    function exportBackup(){
+      flushSave();
+      try {
+        const payload = {app:'notas-simples', product:'Notas de Bolso', version:BACKUP_VERSION, exportedAt:new Date().toISOString(), notes};
+        const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json;charset=utf-8'});
+        const day = new Date().toISOString().slice(0,10);
+        downloadBlob(blob, `notas-backup-${day}.json`);
+        toggleMenu(false);
+        showToast(`${notes.length} ${notes.length === 1 ? 'nota exportada' : 'notas exportadas'}.`);
+      } catch (error){
+        console.error(error);
+        alert('Não consegui gerar o backup. Tente novamente antes de fechar o aplicativo.');
+      }
+    }
+
+    function collectRescueEntries(){
+      const entries = [];
+      const seen = new Set();
+      if (unreadableStorageRaw){
+        entries.push({source:'sessão atual', raw:unreadableStorageRaw});
+        seen.add(unreadableStorageRaw);
+      }
+      try {
+        for (let i=0;i<localStorage.length;i++){
+          const key = localStorage.key(i);
+          if (key !== RAW_RESCUE_KEY && !key?.startsWith(RAW_RESCUE_PREFIX)) continue;
+          const value = localStorage.getItem(key);
+          if (!value) continue;
+          try {
+            const parsed = JSON.parse(value);
+            if (parsed?.app === 'notas-simples-rescue' && typeof parsed.raw === 'string'){
+              if (!seen.has(parsed.raw)) entries.push({source:parsed.source || key, preservedAt:parsed.preservedAt, raw:parsed.raw});
+              seen.add(parsed.raw);
+              continue;
+            }
+          } catch {}
+          if (!seen.has(value)) entries.push({source:key, raw:value});
+          seen.add(value);
+        }
+      } catch {}
+      return entries;
+    }
+
+    function downloadRescueData(){
+      const entries = collectRescueEntries();
+      if (!entries.length){ showToast('Não há dados de recuperação disponíveis.'); return; }
+      try {
+        const payload = JSON.stringify({app:'notas-simples-rescue', version:1, exportedAt:new Date().toISOString(), items:entries}, null, 2);
+        downloadBlob(new Blob([payload], {type:'application/json;charset=utf-8'}), `notas-recuperacao-${new Date().toISOString().slice(0,10)}.json`);
+        toggleMenu(false);
+        showToast('Dados de recuperação baixados.');
+      } catch {
+        alert('Não consegui baixar os dados de recuperação neste navegador.');
+      }
+    }
+
+    function parseBackup(raw){
+      let incoming;
+      let version = 0;
+      if (Array.isArray(raw)){
+        incoming = raw;
+      } else if (raw && typeof raw === 'object' && Array.isArray(raw.notes)){
+        if (raw.app && raw.app !== 'notas-simples') throw new Error('Este JSON pertence a outro aplicativo.');
+        version = Number(raw.version) || 0;
+        if (version > BACKUP_VERSION) throw new Error('Este backup foi criado por uma versão mais nova do Notas de Bolso.');
+        incoming = raw.notes;
+      } else {
+        throw new Error('O arquivo não contém uma lista de notas válida.');
+      }
+      const normalized = normalizeNotesArray(incoming);
+      if (normalized.invalidCount){
+        throw new Error(`O backup contém ${normalized.invalidCount} ${normalized.invalidCount === 1 ? 'item inválido' : 'itens inválidos'}. Nada foi importado para evitar perda silenciosa.`);
+      }
+      if (incoming.length && !normalized.notes.length) throw new Error('Nenhuma nota válida foi encontrada no arquivo.');
+      return {notes:normalized.notes, version};
+    }
+
+    function mergeImportedNotes(localNotes, importedNotes){
+      const merged = new Map(localNotes.map(n=>[n.id,n]));
+      const all = [...localNotes];
+      let added = 0, conflicts = 0, ignored = 0;
+      for (const imported of importedNotes){
+        const local = merged.get(imported.id);
+        if (!local){
+          merged.set(imported.id, imported);
+          all.push(imported);
+          added++;
+          continue;
+        }
+        if (sameNoteData(imported, local)){
+          ignored++;
+          continue;
+        }
+        // Backup nunca substitui silenciosamente conteúdo local divergente, mesmo com timestamp maior.
+        const alreadyPreserved = all.some(note => sameNoteData(note, imported));
+        if (alreadyPreserved){
+          ignored++;
+          continue;
+        }
+        const copy = conflictCopy(imported, 'importada');
+        merged.set(copy.id, copy);
+        all.push(copy);
+        added++;
+        conflicts++;
+      }
+      return {notes:[...merged.values()], added, updated:0, conflicts, ignored};
+    }
+
+    async function importBackup(file){
+      const before = notes.map(n=>({...n}));
+      const beforeSelected = selectedId;
+      const beforeDirty = new Set(dirtyNoteIds);
+      try {
+        if (!file) throw new Error('Nenhum arquivo selecionado.');
+        if (file.size > MAX_BACKUP_BYTES) throw new Error('Este backup é grande demais para ser importado com segurança neste navegador.');
+        const text = await file.text();
+        let raw;
+        try { raw = JSON.parse(text); }
+        catch { throw new Error('O arquivo não é um JSON válido ou está corrompido.'); }
+        const parsed = parseBackup(raw);
+        const result = mergeImportedNotes(notes, parsed.notes);
+        if (!result.added && !result.updated && !result.conflicts){
+          showToast('Esse backup não tem alterações mais novas.');
+          return;
+        }
+        const totalChanges = result.added + result.updated;
+        if (!confirm(`Importar ${totalChanges} ${totalChanges === 1 ? 'alteração' : 'alterações'}? Suas notas atuais não serão apagadas.`)) return;
+        notes = result.notes;
+        const beforeMap = new Map(before.map(note=>[note.id,note]));
+        const changedIds = [];
+        for (const note of notes){
+          const previous = beforeMap.get(note.id);
+          if (!previous || !sameNoteContent(previous, note)){
+            dirtyNoteIds.add(note.id);
+            changedIds.push(note.id);
+          }
+        }
+        selectedId = selectedId && notes.some(n=>n.id===selectedId) ? selectedId : sortedNotes(notes)[0]?.id || null;
+        if (!persist({restoredIds:changedIds})){
+          const error = new Error('Não houve espaço para salvar a importação.');
+          error.storageFailure = true;
+          throw error;
+        }
+        renderList();
+        renderEditor();
+        const conflictText = result.conflicts ? ` • ${result.conflicts} conflito preservado como cópia` : '';
+        showToast(`Importado: ${result.added} novas, ${result.updated} atualizadas${conflictText}.`);
+      } catch (error){
+        notes = before;
+        dirtyNoteIds.clear();
+        for (const id of beforeDirty) dirtyNoteIds.add(id);
+        selectedId = beforeSelected;
+        renderList();
+        renderEditor();
+        if (error?.storageFailure) showStorageError(error);
+        alert(error?.message || 'Não consegui importar esse arquivo. Escolha um backup JSON criado pelo Notas de Bolso.');
+      } finally {
+        importInput.value = '';
+      }
+    }
+
+    newBtn.onclick = createNote;
+    deleteBtn.onclick = deleteNote;
+    duplicateBtn.onclick = duplicateNote;
+    pinBtn.onclick = togglePin;
+    pdfBtn.onclick = downloadNotePdf;
+    copyBtn.onclick = copyCurrentNote;
+    shareBtn.onclick = ()=>{ toggleNoteMenu(false); shareNote(); };
+    txtBtn.onclick = downloadNoteTxt;
+    backBtn.onclick = leaveEditor;
+    searchEl.oninput = scheduleSearch;
+    titleEl.oninput = scheduleSave;
+    bodyEl.oninput = ()=>{ autoGrow(); scheduleSave(); };
+
+    menuBtn.onclick = event => { event.stopPropagation(); toggleMenu(); };
+    menuEl.onclick = event => event.stopPropagation();
+    menuEl.addEventListener('keydown', event => handleMenuKeys(event, menuEl, menuBtn, toggleMenu));
+    noteMoreBtn.onclick = event => { event.stopPropagation(); toggleNoteMenu(); };
+    noteMenu.onclick = event => event.stopPropagation();
+    noteMenu.addEventListener('keydown', event => handleMenuKeys(event, noteMenu, noteMoreBtn, toggleNoteMenu));
+    document.addEventListener('click', ()=>{ toggleMenu(false); toggleNoteMenu(false); });
+    exportBtn.onclick = exportBackup;
+    rescueBtn.onclick = downloadRescueData;
+    aboutBtn.onclick = ()=>{
+      toggleMenu(false);
+      if (typeof aboutDialog.showModal === 'function') aboutDialog.showModal();
+      else aboutDialog.setAttribute('open','');
+    };
+    aboutCloseBtn.onclick = ()=>aboutDialog.close();
+    aboutDialog.addEventListener('click', event => { if (event.target === aboutDialog) aboutDialog.close(); });
+    importBtn.onclick = ()=>{ toggleMenu(false); importInput.click(); };
+    importInput.onchange = ()=>{ const file = importInput.files?.[0]; if (file) importBackup(file); };
+
+    function syncFromOtherInstance(){
+      clearTimeout(externalSyncTimer);
+      externalSyncTimer = setTimeout(()=>{
+        externalSyncTimer = null;
+        try {
+          syncEditorIntoMemory();
+          const storedState = readStoredStateForMerge();
+          notes = mergeConcurrentNotes(notes, storedState.notes, storedState.tombstones, dirtyNoteIds, false);
+          stateTombstones = compactTombstones(storedState.tombstones, notes);
+          refreshKnownSnapshots(notes, true);
+          if (selectedId && !notes.some(note=>note.id===selectedId)) selectedId = sortedNotes(notes)[0]?.id || null;
+          renderList();
+          renderEditor();
+        } catch {}
+      }, 40);
+    }
+
+    function syncLegacyInstance(){
+      // Ponte de atualização: uma aba v1.2 antiga ainda aberta não consegue sobrescrever o estado v1.3.
+      try {
+        const legacy = readLegacyState();
+        const deletedIds = Object.keys(legacy.tombstones).filter(id => !stateTombstones[id]);
+        let changed = false;
+        for (const incoming of legacy.notes){
+          const current = notes.find(note=>note.id===incoming.id);
+          if (!current){
+            if (!stateTombstones[incoming.id]){
+              notes.push(incoming);
+              dirtyNoteIds.add(incoming.id);
+              changed = true;
+            }
+          } else if (!sameNoteData(current, incoming) && !notes.some(note=>sameNoteData(note, incoming))){
+            const copy = conflictCopy(incoming, 'versão de aba antiga');
+            notes.push(copy);
+            dirtyNoteIds.add(copy.id);
+            changed = true;
+          }
+        }
+        if (changed || deletedIds.length) persist({deletedIds});
+      } catch {}
+    }
+
+    window.addEventListener('storage', event => {
+      if (event.key === STATE_KEY) syncFromOtherInstance();
+      else if (event.key === STORAGE_KEY || event.key === SYNC_META_KEY) syncLegacyInstance();
+    });
+
+    window.addEventListener('resize', scheduleViewportSync);
+    window.visualViewport?.addEventListener('resize', scheduleViewportSync);
+    window.visualViewport?.addEventListener('scroll', scheduleViewportSync);
+    window.addEventListener('popstate', ()=>{
+      if (app.classList.contains('editing')){
+        mobileHistoryArmed = false;
+        if (!closeEditorView()){
+          // O histórico já voltou, então rearmamos a entrada para manter o editor aberto com segurança.
+          app.classList.add('editing');
+          armMobileHistory();
+        }
+      } else {
+        mobileHistoryArmed = false;
+      }
+    });
+    window.addEventListener('beforeunload', flushSave);
+    window.addEventListener('pagehide', flushSave);
+    document.addEventListener('visibilitychange', ()=>{ if (document.hidden) flushSave(); });
+    document.addEventListener('freeze', flushSave);
+
+    document.addEventListener('keydown', event => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f'){
+        event.preventDefault();
+        if (!leaveEditor()) return;
+        searchEl.focus();
+        searchEl.select();
+        return;
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'n'){
+        event.preventDefault();
+        createNote();
+        return;
+      }
+      if (event.key === 'Escape' && !noteMenu.hidden){
+        toggleNoteMenu(false);
+        noteMoreBtn.focus();
+      } else if (event.key === 'Escape' && !menuEl.hidden){
+        toggleMenu(false);
+        menuBtn.focus();
+      } else if (event.key === 'Escape' && window.innerWidth <= 700 && app.classList.contains('editing')){
+        leaveEditor();
+      }
+    });
+
+    paperEl.addEventListener('animationend', ()=>paperEl.classList.remove('note-enter'));
+
+    // Migra instalações antigas e consolida qualquer recovery em uma única gravação atômica.
+    if ((migratedFromLegacy || recoveredOnLoad || atomicStateNeedsRepair) && !storageWriteLocked && !futureStateBlocked) persist();
+
+    syncAppHeight();
+    renderList();
+    renderEditor();
+    rescueBtn.hidden = !unreadableStorageRaw;
+    if (unreadableStorageRaw){
+      setTimeout(()=>showToast(futureStateBlocked
+        ? 'Encontrei dados criados por uma versão mais nova e preservei uma cópia sem sobrescrevê-los.'
+        : 'Encontrei dados locais danificados e preservei uma cópia para recuperação.'), 180);
+    } else if (storageWriteLocked){
+      setTimeout(()=>showToast('Este navegador está bloqueando o armazenamento local. Exporte o que precisar antes de fechar.'), 180);
+    } else if (recoveredOnLoad){
+      setTimeout(()=>showToast(recoveryConflictPromoted ? 'Duas versões da mesma edição foram preservadas.' : 'Uma edição não salva foi recuperada.'), 150);
+    }
+
+    if ('serviceWorker' in navigator){
+      window.addEventListener('load', async ()=>{
+        try {
+          let knownController = navigator.serviceWorker.controller;
+          let reloading = false;
+          const registration = await navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'});
+
+          const showUpdateOffer = () => {
+            const worker = waitingUpdateWorker;
+            if (!worker || !navigator.serviceWorker.controller) return;
+            updateToastShown = true;
+            showToast('Uma atualização do Notas de Bolso está pronta.', 'Atualizar', ()=>{
+              updateToastShown = false;
+              // Atualizar nunca pode ter prioridade sobre preservar a edição atual.
+              if (!flushSave()){
+                showToast('A atualização foi adiada porque não foi possível salvar.');
+                setTimeout(()=>{ if (waitingUpdateWorker) showUpdateOffer(); }, 2600);
+                return;
+              }
+              const target = waitingUpdateWorker;
+              waitingUpdateWorker = null;
+              target?.postMessage({type:'SKIP_WAITING'});
+            }, {persistent:true});
+          };
+
+          reofferUpdate = showUpdateOffer;
+
+          const offerUpdate = worker => {
+            if (!worker || !navigator.serviceWorker.controller) return;
+            waitingUpdateWorker = worker;
+            if (!updateToastShown) showUpdateOffer();
+          };
+
+          if (registration.waiting) offerUpdate(registration.waiting);
+          registration.addEventListener('updatefound', ()=>{
+            const worker = registration.installing;
+            if (!worker) return;
+            worker.addEventListener('statechange', ()=>{
+              if (worker.state === 'installed') offerUpdate(worker);
+            });
+          });
+
+          navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+            if (!knownController){
+              knownController = navigator.serviceWorker.controller;
+              return;
+            }
+            if (reloading) return;
+            if (!flushSave()){
+              showToast('Atualização instalada. Reabra o app depois que o salvamento voltar a funcionar.');
+              return;
+            }
+            reloading = true;
+            location.reload();
+          });
+
+          registration.update().catch(()=>{});
+        } catch {}
+      });
+    }
+
+  </script>
+</body>
+</html>
